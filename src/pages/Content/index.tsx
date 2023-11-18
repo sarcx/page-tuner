@@ -1,4 +1,4 @@
-import {clickOn, findEl, isClicked, markAsClicked, printLine} from './modules/print'
+import {clickOn, findEl, isClicked, markAsClicked, printLine} from './modules'
 
 printLine('Must reload extension for modifications to take effect.')
 
