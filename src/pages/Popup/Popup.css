@@ -1,0 +1,27 @@
+@import url('switch.css');
+
+body {
+  background: #6d6d6d;
+  color: white;
+}
+
+.body > * {
+  margin: 8px;
+}
+
+div.logo {
+  text-align: center;
+  padding-top: 16px;
+  margin-bottom: 16px;
+}
+
+ul {
+  list-style-type: none;
+  padding: 0;
+}
+
+ul li {
+  display: flex;
+  margin: 16px 0;
+  gap: 8px;
+}
