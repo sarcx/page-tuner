@@ -1,4 +1,4 @@
-import {clickOn, findEl, isClicked, markAsClicked, printLine} from './modules'
+import {clickOn, findEl, isClicked, markAsClicked, printLine, sleep} from './modules'
 
 printLine('Must reload extension for modifications to take effect.')
 
@@ -67,18 +67,26 @@ document.addEventListener('scroll', onLoad)
 async function exposeCompareAndOpenPullRequestButtons() {
   if (!(await readLocalStorage('moveCompareButtonRule'))) return
   if (!location.href.match(/https:\/\/github.com/)) return
+
   // Expose Compare and Open pull request buttons in branch summary
-  const contributeBlock = findEl(`//div[details/summary[text()[contains(.,"Contribute")]]]`) as HTMLDivElement | null
+  await sleep(150)
 
-  const contributeButtonsBlock = findEl(`//div/div/ul/li/div[a[text()[contains(.,"Open pull request")]]]`)
+  const branchInfoBar = document.querySelector('[data-testid="branch-info-bar"]')
 
-  contributeButtonsBlock && contributeBlock?.appendChild(contributeButtonsBlock)
+  const contributeButton = findEl('//button[span/span[text()[contains(.,"Contribute")]]]') as HTMLButtonElement | null
 
-  if (contributeBlock) {
-    const contributeDetailsBlock = findEl(`details`, contributeBlock) as HTMLDivElement
+  contributeButton?.click()
 
-    contributeDetailsBlock && (contributeDetailsBlock.style.display = 'none')
-  }
+  // TODO: for unknown reason elements are findable after some time.
+  await sleep(20)
+
+  const compareButtons = findEl('//div[a/span/span[text()[contains(.,"Open pull request")]]] ')
+
+  compareButtons && contributeButton?.parentElement?.appendChild(compareButtons)
+
+  contributeButton?.click()
+
+  contributeButton && (contributeButton.style.display = 'none')
 }
 
 exposeCompareAndOpenPullRequestButtons()

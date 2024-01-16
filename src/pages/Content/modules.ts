@@ -28,3 +28,5 @@ export function markAsClicked(el: HTMLElement) {
 export function isClicked(node: HTMLElement) {
   return node.classList.contains('pt-clicked')
 }
+
+export const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms))
