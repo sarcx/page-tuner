@@ -1,4 +1,4 @@
-import {clickOn, findEl, isClicked, markAsClicked, printLine, sleep} from './modules'
+import {clickOn, findAllEl, findEl, isClicked, markAsClicked, printLine, sleep} from './modules'
 
 printLine('Must reload extension for modifications to take effect.')
 
@@ -35,26 +35,28 @@ async function onLoad() {
   printLine('Page Tuner automation is running...')
 
   autoGenerateFileNames.forEach(fileName => {
-    const within = findEl(`//div[div[span/a[text()[(contains(.,'${fileName}'))]]]]`)
-    if (!within) return
-    if (isClicked(within as HTMLElement)) return
+    const withins = findAllEl(`//div[div[span/a[text()[(contains(.,'${fileName}'))]]]]`)
+    for (const within of withins) {
+      if (!within) return
+      if (isClicked(within as HTMLElement)) return
 
-    const expandButton = findEl(
-      `div/button[@aria-expanded='true'][@aria-label="Toggle diff contents"]`,
-      within
-    ) as HTMLButtonElement | null
+      const expandButton = findEl(
+        `div/button[@aria-expanded='true'][@aria-label="Toggle diff contents"]`,
+        within
+      ) as HTMLButtonElement | null
 
-    const reviewedCheckbox = findEl('div/div/div/form/label/input', within) as HTMLInputElement | null
+      const reviewedCheckbox = findEl('div/div/div/form/label/input', within) as HTMLInputElement | null
 
-    if (reviewedCheckbox && reviewedCheckbox.checked) {
-      markAsClicked(reviewedCheckbox)
-      markAsClicked(within as HTMLElement)
-    } else if (reviewedCheckbox && !reviewedCheckbox.checked) {
-      clickOn(reviewedCheckbox)
-      markAsClicked(within as HTMLElement)
-    } else {
-      clickOn(expandButton)
-      markAsClicked(within as HTMLElement)
+      if (reviewedCheckbox && reviewedCheckbox.checked) {
+        markAsClicked(reviewedCheckbox)
+        markAsClicked(within as HTMLElement)
+      } else if (reviewedCheckbox && !reviewedCheckbox.checked) {
+        clickOn(reviewedCheckbox)
+        markAsClicked(within as HTMLElement)
+      } else {
+        clickOn(expandButton)
+        markAsClicked(within as HTMLElement)
+      }
     }
   })
 

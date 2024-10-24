@@ -2,19 +2,17 @@
 
 # Chrome Extension for adding modifications to any page
 
-
 ## Installing and Running
 
 ### Procedures:
 
 1. Run `npm install` to install the dependencies.
-2. Run `npm start`
+2. Run `npm start` or `npm run build`
 3. Load your extension on Chrome following:
    1. Access `chrome://extensions/`
    2. Check `Developer mode`
    3. Click on `Load unpacked extension`
    4. Select the `build` folder.
-
 
 ## Content Scripts
 
@@ -67,14 +65,14 @@ To this task this boilerplate import the file `./secrets.<THE-NODE_ENV>.js` on y
 _./secrets.development.js_
 
 ```js
-export default { key: '123' };
+export default {key: '123'}
 ```
 
 _./src/popup.js_
 
 ```js
-import secrets from 'secrets';
-ApiCall({ key: secrets.key });
+import secrets from 'secrets'
+ApiCall({key: secrets.key})
 ```
 
 :point_right: The files with name `secrets.*.js` already are ignored on the repository.
