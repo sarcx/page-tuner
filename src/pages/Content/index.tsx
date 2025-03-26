@@ -95,3 +95,6 @@ async function exposeCompareAndOpenPullRequestButtons() {
 }
 
 exposeCompareAndOpenPullRequestButtons()
+
+// TODO: Move reviewed  checkbox on the right in GitHub
+// TODO: Add auto approve button on PRs
