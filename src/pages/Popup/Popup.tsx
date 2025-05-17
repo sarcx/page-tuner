@@ -1,41 +1,60 @@
 import React, {ChangeEvent, useEffect, useState} from 'react'
+import {getRuleDefinitions} from '../utils/messages'
 import './Popup.css'
 
-export const readLocalStorage = async (key: 'autoCollapseRule' | 'moveCompareButtonRule') => {
-  return new Promise((resolve, reject) => {
-    chrome.storage.local.get([key], function (result) {
-      resolve(result[key])
-    })
-  })
-}
+const STORAGE_KEY = 'pageTunerRules'
 
 function Popup() {
   const [autoCollapseRule, setAutoCollapseRule] = useState<boolean>(false)
   const [moveCompareButtonRule, setMoveCompareButtonRule] = useState<boolean>(false)
 
   useEffect(() => {
-    async function init() {
-      const autoCollapseRuleValue = (await readLocalStorage('autoCollapseRule')) as boolean | undefined
-      setAutoCollapseRule(!!autoCollapseRuleValue)
-
-      const moveCompareButtonValue = (await readLocalStorage('moveCompareButtonRule')) as boolean | undefined
-      setMoveCompareButtonRule(!!moveCompareButtonValue)
+    async function initRules() {
+      const rules = await getRuleDefinitions()
+      setAutoCollapseRule(!!rules.autoCollapseRule?.enabled)
+      setMoveCompareButtonRule(!!rules.moveCompareButtonRule?.enabled)
     }
 
-    init()
+    initRules()
   }, [])
 
   const onChangeCollapsibleToggle = (e: ChangeEvent<HTMLInputElement>): void => {
-    setAutoCollapseRule(e.target.checked)
-    chrome.storage.local.set({autoCollapseRule: e.target.checked}).then(() => {
-      // TODO: send message to all tabs for the state of this rule
+    const newValue = e.target.checked
+    setAutoCollapseRule(newValue)
+    getRuleDefinitions().then(rules => {
+      chrome.storage.local
+        .set({
+          [STORAGE_KEY]: {
+            ...rules,
+            autoCollapseRule: {
+              enabled: newValue,
+              specifics: rules.autoCollapseRule?.specifics || {}
+            }
+          }
+        })
+        .then(() => {
+          // TODO: send message to all tabs for the state of this rule
+        })
     })
   }
 
   const onChangeMoveCompareButtonToggle = (e: ChangeEvent<HTMLInputElement>): void => {
-    setMoveCompareButtonRule(e.target.checked)
-    chrome.storage.local.set({moveCompareButtonRule: e.target.checked}).then(() => {
-      // TODO: send message to all tabs for the state of this rule
+    const newValue = e.target.checked
+    setMoveCompareButtonRule(newValue)
+    getRuleDefinitions().then(rules => {
+      chrome.storage.local
+        .set({
+          [STORAGE_KEY]: {
+            ...rules,
+            moveCompareButtonRule: {
+              enabled: newValue,
+              specifics: rules.moveCompareButtonRule?.specifics || {}
+            }
+          }
+        })
+        .then(() => {
+          // TODO: send message to all tabs for the state of this rule
+        })
     })
   }
 
