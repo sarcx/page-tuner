@@ -19,8 +19,8 @@ async function onLoad() {
   rules.autoCollapseRule.specifics.autoGenerateFileNames.forEach((fileName: string) => {
     const withins = findAllEl(`//div[div[span/a[text()[(contains(.,'${fileName}'))]]]]`)
     for (const within of withins) {
-      if (!within) return
-      if (isClicked(within as HTMLElement)) return
+      if (!within) continue
+      if (isClicked(within as HTMLElement)) continue
 
       const expandButton = findEl(
         `div/button[@aria-expanded='true'][@aria-label="Toggle diff contents"]`,
@@ -29,15 +29,16 @@ async function onLoad() {
 
       const reviewedCheckbox = findEl('div/div/div/form/label/input', within) as HTMLInputElement | null
 
+      const slug = findEl(`div/span/a[text()[(contains(.,'${fileName}'))]]`, within)?.textContent || ''
       if (reviewedCheckbox && reviewedCheckbox.checked) {
-        markAsClicked(reviewedCheckbox)
-        markAsClicked(within as HTMLElement)
+        markAsClicked(reviewedCheckbox, slug)
+        markAsClicked(within as HTMLElement, slug)
       } else if (reviewedCheckbox && !reviewedCheckbox.checked) {
-        clickOn(reviewedCheckbox)
-        markAsClicked(within as HTMLElement)
+        clickOn(reviewedCheckbox, slug)
+        markAsClicked(within as HTMLElement, slug)
       } else {
-        clickOn(expandButton)
-        markAsClicked(within as HTMLElement)
+        clickOn(expandButton, slug)
+        markAsClicked(within as HTMLElement, slug)
       }
     }
   })
@@ -45,10 +46,13 @@ async function onLoad() {
   isScrollingScriptStarted = false
 }
 
-onLoad()
-
-// TODO: find a better way to recheck for page changes
-document.addEventListener('scroll', onLoad)
+if (location.href.match(/https:\/\/github.com/)) {
+  const mainLayout = document.querySelector('div.Layout-main')
+  if (mainLayout) {
+    const observer = new MutationObserver(onLoad)
+    observer.observe(mainLayout, {childList: true, subtree: true, characterData: true, attributes: true})
+  }
+}
 
 async function exposeCompareAndOpenPullRequestButtons() {
   const rules = await getRuleDefinitions()

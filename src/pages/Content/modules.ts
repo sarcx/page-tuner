@@ -1,5 +1,5 @@
 export const printLine = (line: any) => {
-  console.log('===>', line)
+  console.debug('===>', line)
 }
 
 export function findAllEl(pathToNode: string, within?: Node | null) {
@@ -25,19 +25,19 @@ export function findEl(pathToNode: string, within?: Node | null) {
     ?.singleNodeValue
 }
 
-export function clickOn(el: HTMLElement | null) {
+export function clickOn(el: HTMLElement | null, slug?: string) {
   if (!el) return
 
   if (!el.classList.contains('pt-clicked')) {
-    console.log('PT-Action: click')
+    console.debug(`PT-Action: click ${slug || ''}`)
     el.click()
     el.classList.add('pt-clicked')
   }
 }
 
-export function markAsClicked(el: HTMLElement) {
+export function markAsClicked(el: HTMLElement, slug?: string) {
   if (!el.classList.contains('pt-clicked')) {
-    console.log('PT-Action: mark as clicked')
+    console.debug(`PT-Action: mark as clicked ${slug || ''}`)
     el.classList.add('pt-clicked')
   }
 }
