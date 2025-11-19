@@ -17,23 +17,27 @@ async function onLoad() {
   printLine('Page Tuner automation is running...')
 
   rules.autoCollapseRule.specifics.autoGenerateFileNames.forEach((fileName: string) => {
-    const withins = findAllEl(`//div[div[span/a[text()[(contains(.,'${fileName}'))]]]]`)
+    const withins = findAllEl(`//div[div[h3/a/code[text()[contains(.,'${fileName}')]]]]`)
     for (const within of withins) {
       if (!within) continue
       if (isClicked(within as HTMLElement)) continue
 
       const expandButton = findEl(
-        `div/button[@aria-expanded='true'][@aria-label="Toggle diff contents"]`,
+        `div/button[svg[contains(@class,"octicon-chevron")]]`,
         within
       ) as HTMLButtonElement | null
 
-      const reviewedCheckbox = findEl('div/div/div/form/label/input', within) as HTMLInputElement | null
+      const reviewedCheckbox = findEl(
+        'div/div/button[@aria-label="Not Viewed" or @aria-label="Viewed"]',
+        within
+      ) as HTMLButtonElement | null
 
-      const slug = findEl(`div/span/a[text()[(contains(.,'${fileName}'))]]`, within)?.textContent || ''
-      if (reviewedCheckbox && reviewedCheckbox.checked) {
+      const slug = findEl(`div/h3/a/code[text()[contains(.,'${fileName}')]]`, within)?.textContent || ''
+
+      if (reviewedCheckbox && reviewedCheckbox.getAttribute('aria-pressed') === 'true') {
         markAsClicked(reviewedCheckbox, slug)
         markAsClicked(within as HTMLElement, slug)
-      } else if (reviewedCheckbox && !reviewedCheckbox.checked) {
+      } else if (reviewedCheckbox && reviewedCheckbox.getAttribute('aria-pressed') === 'false') {
         clickOn(reviewedCheckbox, slug)
         markAsClicked(within as HTMLElement, slug)
       } else {
@@ -47,10 +51,12 @@ async function onLoad() {
 }
 
 if (location.href.match(/https:\/\/github.com/)) {
-  const mainLayout = document.querySelector('div.Layout-main')
+  const mainLayout = document.querySelector('div[class*="PageLayout-Content"]')
   if (mainLayout) {
     const observer = new MutationObserver(onLoad)
     observer.observe(mainLayout, {childList: true, subtree: true, characterData: true, attributes: true})
+  } else {
+    printLine('Could not find div[class*="PageLayout-Content"]')
   }
 }
 
