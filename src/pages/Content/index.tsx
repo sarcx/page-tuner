@@ -91,3 +91,4 @@ exposeCompareAndOpenPullRequestButtons()
 // TODO: Move reviewed  checkbox on the right in GitHub
 // TODO: Add auto approve button on PRs
 // TODO: Expand all files
+// TODO: add keyboard shortcut to review the file under the mouse(current viewing file)
