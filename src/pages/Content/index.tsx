@@ -88,6 +88,228 @@ async function exposeCompareAndOpenPullRequestButtons() {
 
 exposeCompareAndOpenPullRequestButtons()
 
+// Peakon.com survey answer memory
+async function initPeakonAnswerMemory() {
+  const rules = await getRuleDefinitions()
+  if (!rules.peakonRememberAnswersRule?.enabled) return
+  if (!location.href.match(/https:\/\/.*peakon\.com/)) return
+
+  printLine('Peakon answer memory automation is running...')
+
+  const STORAGE_KEY = 'peakon_survey_answers'
+  let lastQuestionText = ''
+
+  function getQuestionText(): string | null {
+    const questionTitle = document.getElementById('question-item-title')
+    return questionTitle?.textContent?.trim() || null
+  }
+
+  function getAnswerButtons(): HTMLButtonElement[] {
+    const buttons = document.querySelectorAll<HTMLButtonElement>('button[data-scale]')
+    return Array.from(buttons)
+  }
+
+  function getAllAnswers(): Record<string, string> {
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY)
+      return stored ? JSON.parse(stored) : {}
+    } catch {
+      return {}
+    }
+  }
+
+  function saveAnswer(questionText: string, answerValue: string) {
+    const answers = getAllAnswers()
+    answers[questionText] = answerValue
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(answers))
+    printLine(`Saved answer for "${questionText}": ${answerValue}`)
+  }
+
+  function getSavedAnswer(questionText: string): string | null {
+    const answers = getAllAnswers()
+    return answers[questionText] || null
+  }
+
+  function highlightPreviousAnswer(questionText: string) {
+    const savedAnswer = getSavedAnswer(questionText)
+    if (!savedAnswer) return
+
+    const buttons = getAnswerButtons()
+    const targetButton = buttons.find(btn => btn.getAttribute('data-scale') === savedAnswer)
+
+    if (targetButton) {
+      // Add visual indicator
+      targetButton.style.outline = '3px solid #4CAF50'
+      targetButton.style.outlineOffset = '2px'
+      targetButton.style.borderRadius = '4px'
+      targetButton.title = `Previous answer: ${savedAnswer}`
+    }
+  }
+
+  function removeHighlights() {
+    const buttons = getAnswerButtons()
+    buttons.forEach(btn => {
+      btn.style.outline = ''
+      btn.style.outlineOffset = ''
+      btn.style.borderRadius = ''
+      btn.title = ''
+    })
+  }
+
+  function handleAnswerClick(event: Event) {
+    const target = event.target as HTMLElement
+    
+    // Check if this click is on or inside a button with data-scale
+    const button = target.closest('button[data-scale]') as HTMLButtonElement | null
+    
+    if (!button) {
+      // Also check for "Change current score" button which opens the scale selector
+      const changeScoreBtn = target.closest('button[data-test-id="score"]') as HTMLButtonElement | null
+      if (changeScoreBtn) {
+        // Wait a bit then re-observe buttons
+        setTimeout(() => {
+          observeAnswerButtons()
+        }, 300)
+      }
+      return
+    }
+
+    const questionText = getQuestionText()
+    if (!questionText) return
+
+    const answerValue = button.getAttribute('data-scale')
+    if (answerValue) {
+      saveAnswer(questionText, answerValue)
+    }
+  }
+
+  // Watch for aria-pressed changes on buttons (backup method)
+  const buttonObserver = new MutationObserver(mutations => {
+    mutations.forEach(mutation => {
+      if (mutation.type === 'attributes' && mutation.attributeName === 'aria-pressed') {
+        const button = mutation.target as HTMLButtonElement
+        const ariaPressed = button.getAttribute('aria-pressed')
+        
+        if (button.hasAttribute('data-scale') && ariaPressed === 'true') {
+          const questionText = getQuestionText()
+          if (questionText) {
+            const answerValue = button.getAttribute('data-scale')
+            if (answerValue) {
+              saveAnswer(questionText, answerValue)
+            }
+          }
+        }
+      }
+    })
+  })
+
+  const observedButtons = new WeakSet<HTMLButtonElement>()
+  
+  function observeAnswerButtons() {
+    const buttons = getAnswerButtons()
+    buttons.forEach(btn => {
+      // Only observe if we haven't already observed this button
+      if (!observedButtons.has(btn)) {
+        buttonObserver.observe(btn, {attributes: true, attributeFilter: ['aria-pressed']})
+        observedButtons.add(btn)
+      }
+    })
+  }
+
+  function checkAndHighlightAnswer() {
+    const questionText = getQuestionText()
+    if (!questionText || questionText === lastQuestionText) {
+      // Even if question hasn't changed, re-observe buttons in case they were recreated
+      setTimeout(() => {
+        const buttons = getAnswerButtons()
+        if (buttons.length > 0) {
+          observeAnswerButtons()
+        }
+      }, 500)
+      return
+    }
+
+    lastQuestionText = questionText
+    removeHighlights()
+
+    // Wait a bit for buttons to be fully rendered
+    setTimeout(() => {
+      highlightPreviousAnswer(questionText)
+      observeAnswerButtons() // Re-observe buttons when question changes
+    }, 100)
+    
+    // Also re-observe after a longer delay in case buttons load slowly
+    setTimeout(() => {
+      observeAnswerButtons()
+    }, 500)
+  }
+
+  // Attach click handlers immediately (they work globally)
+  document.addEventListener('click', handleAnswerClick, true)
+
+  // Function to setup observers when container is found
+  function setupQuestionObservers() {
+    const questionContainer = document.querySelector('[data-test-id="question-container"]')
+    if (!questionContainer) {
+      return false
+    }
+
+    const observer = new MutationObserver(() => {
+      checkAndHighlightAnswer()
+    })
+    observer.observe(questionContainer, {
+      childList: true,
+      subtree: true,
+      characterData: true,
+      attributes: true
+    })
+
+    // Initial check
+    checkAndHighlightAnswer()
+
+    // Also listen on the button container directly if it exists
+    const buttonContainer = document.querySelector('.fvysv[role="group"]')
+    if (buttonContainer) {
+      buttonContainer.addEventListener('click', handleAnswerClick, true)
+    }
+    
+    // Initial observation of buttons
+    const buttons = getAnswerButtons()
+    if (buttons.length > 0) {
+      observeAnswerButtons()
+    }
+    
+    return true
+  }
+
+  // Try to setup immediately
+  if (!setupQuestionObservers()) {
+    // If not found, wait for it to appear
+    // Watch the entire document for the container to appear
+    const documentObserver = new MutationObserver(() => {
+      if (setupQuestionObservers()) {
+        documentObserver.disconnect()
+      }
+    })
+    
+    documentObserver.observe(document.body, {
+      childList: true,
+      subtree: true
+    })
+    
+    // Also try after a delay
+    setTimeout(() => {
+      if (setupQuestionObservers()) {
+        documentObserver.disconnect()
+      }
+    }, 1000)
+  }
+}
+
+if (location.href.match(/https:\/\/.*peakon\.com/)) {
+  initPeakonAnswerMemory()
+}
+
 // TODO: Move reviewed  checkbox on the right in GitHub
 // TODO: Add auto approve button on PRs
 // TODO: Expand all files

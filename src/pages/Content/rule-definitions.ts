@@ -15,5 +15,6 @@ export const rules = [
       ]
     }
   },
-  {name: 'moveCompareButtonRule', specifics: {}}
+  {name: 'moveCompareButtonRule', specifics: {}},
+  {name: 'peakonRememberAnswersRule', specifics: {}}
 ]
