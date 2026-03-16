@@ -158,10 +158,10 @@ async function initPeakonAnswerMemory() {
 
   function handleAnswerClick(event: Event) {
     const target = event.target as HTMLElement
-    
+
     // Check if this click is on or inside a button with data-scale
     const button = target.closest('button[data-scale]') as HTMLButtonElement | null
-    
+
     if (!button) {
       // Also check for "Change current score" button which opens the scale selector
       const changeScoreBtn = target.closest('button[data-test-id="score"]') as HTMLButtonElement | null
@@ -189,7 +189,7 @@ async function initPeakonAnswerMemory() {
       if (mutation.type === 'attributes' && mutation.attributeName === 'aria-pressed') {
         const button = mutation.target as HTMLButtonElement
         const ariaPressed = button.getAttribute('aria-pressed')
-        
+
         if (button.hasAttribute('data-scale') && ariaPressed === 'true') {
           const questionText = getQuestionText()
           if (questionText) {
@@ -204,7 +204,7 @@ async function initPeakonAnswerMemory() {
   })
 
   const observedButtons = new WeakSet<HTMLButtonElement>()
-  
+
   function observeAnswerButtons() {
     const buttons = getAnswerButtons()
     buttons.forEach(btn => {
@@ -237,7 +237,7 @@ async function initPeakonAnswerMemory() {
       highlightPreviousAnswer(questionText)
       observeAnswerButtons() // Re-observe buttons when question changes
     }, 100)
-    
+
     // Also re-observe after a longer delay in case buttons load slowly
     setTimeout(() => {
       observeAnswerButtons()
@@ -272,13 +272,13 @@ async function initPeakonAnswerMemory() {
     if (buttonContainer) {
       buttonContainer.addEventListener('click', handleAnswerClick, true)
     }
-    
+
     // Initial observation of buttons
     const buttons = getAnswerButtons()
     if (buttons.length > 0) {
       observeAnswerButtons()
     }
-    
+
     return true
   }
 
@@ -291,12 +291,12 @@ async function initPeakonAnswerMemory() {
         documentObserver.disconnect()
       }
     })
-    
+
     documentObserver.observe(document.body, {
       childList: true,
       subtree: true
     })
-    
+
     // Also try after a delay
     setTimeout(() => {
       if (setupQuestionObservers()) {
@@ -310,7 +310,59 @@ if (location.href.match(/https:\/\/.*peakon\.com/)) {
   initPeakonAnswerMemory()
 }
 
+// Mark file as viewed via Shift+Space
+async function initMarkFileAsViewed() {
+  const rules = await getRuleDefinitions()
+  if (!rules.markFileAsViewedRule?.enabled) return
+  if (!location.href.match(/https:\/\/github.com/)) return
+
+  printLine('Mark file as viewed automation is running...')
+
+  let currentHintBtn: HTMLButtonElement | null = null
+
+  function setHint(viewedBtn: HTMLButtonElement | null) {
+    if (viewedBtn === currentHintBtn) return
+
+    if (currentHintBtn) {
+      currentHintBtn.querySelector('.pt-shortcut-hint')?.remove()
+      currentHintBtn = null
+    }
+
+    if (viewedBtn) {
+      const label = viewedBtn.querySelector('[data-component="text"]')
+      if (label) {
+        const hint = document.createElement('span')
+        hint.className = 'pt-shortcut-hint'
+        hint.textContent = ' (shift+space)'
+        hint.style.cssText = 'font-size:10px;opacity:0.6;font-weight:normal;'
+        label.appendChild(hint)
+        currentHintBtn = viewedBtn
+      }
+    }
+  }
+
+  document.addEventListener('mouseover', (e: MouseEvent) => {
+    const diffFileContainer = (e.target as HTMLElement).closest('[id^="diff-"]')
+    const viewedBtn = diffFileContainer?.querySelector<HTMLButtonElement>(
+      'button[aria-label="Not Viewed"]'
+    ) ?? null
+    setHint(viewedBtn)
+  })
+
+  document.addEventListener('keydown', (e: KeyboardEvent) => {
+    if (!e.shiftKey || e.key !== ' ') return
+    if (!currentHintBtn) return
+
+    e.preventDefault()
+    currentHintBtn.click()
+    printLine(`Marked file as viewed via Shift+Space`)
+  })
+}
+
+if (location.href.match(/https:\/\/github.com/)) {
+  initMarkFileAsViewed()
+}
+
 // TODO: Move reviewed  checkbox on the right in GitHub
 // TODO: Add auto approve button on PRs
 // TODO: Expand all files
-// TODO: add keyboard shortcut to review the file under the mouse(current viewing file)

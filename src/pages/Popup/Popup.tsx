@@ -8,6 +8,7 @@ function Popup() {
   const [autoCollapseRule, setAutoCollapseRule] = useState<boolean>(false)
   const [moveCompareButtonRule, setMoveCompareButtonRule] = useState<boolean>(false)
   const [peakonRememberAnswersRule, setPeakonRememberAnswersRule] = useState<boolean>(false)
+  const [markFileAsViewedRule, setMarkFileAsViewedRule] = useState<boolean>(false)
 
   useEffect(() => {
     async function initRules() {
@@ -15,6 +16,7 @@ function Popup() {
       setAutoCollapseRule(!!rules.autoCollapseRule?.enabled)
       setMoveCompareButtonRule(!!rules.moveCompareButtonRule?.enabled)
       setPeakonRememberAnswersRule(!!rules.peakonRememberAnswersRule?.enabled)
+      setMarkFileAsViewedRule(!!rules.markFileAsViewedRule?.enabled)
     }
 
     initRules()
@@ -80,6 +82,26 @@ function Popup() {
     })
   }
 
+  const onChangeMarkFileAsViewedToggle = (e: ChangeEvent<HTMLInputElement>): void => {
+    const newValue = e.target.checked
+    setMarkFileAsViewedRule(newValue)
+    getRuleDefinitions().then(rules => {
+      chrome.storage.local
+        .set({
+          [STORAGE_KEY]: {
+            ...rules,
+            markFileAsViewedRule: {
+              enabled: newValue,
+              specifics: rules.markFileAsViewedRule?.specifics || {}
+            }
+          }
+        })
+        .then(() => {
+          // TODO: send message to all tabs for the state of this rule
+        })
+    })
+  }
+
   return (
     <div className="body">
       <div className="logo">
@@ -94,6 +116,10 @@ function Popup() {
         <li>
           <Switch value={moveCompareButtonRule} onChange={onChangeMoveCompareButtonToggle} />
           <span> Move out Compare and Open Pull Request buttons</span>
+        </li>
+        <li>
+          <Switch value={markFileAsViewedRule} onChange={onChangeMarkFileAsViewedToggle} />
+          <span> Mark file as viewed (Shift+Space)</span>
         </li>
       </ul>
       <div>Peakon tasks</div>

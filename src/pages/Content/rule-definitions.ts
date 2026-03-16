@@ -16,5 +16,6 @@ export const rules = [
     }
   },
   {name: 'moveCompareButtonRule', specifics: {}},
-  {name: 'peakonRememberAnswersRule', specifics: {}}
+  {name: 'peakonRememberAnswersRule', specifics: {}},
+  {name: 'markFileAsViewedRule', specifics: {}}
 ]
