@@ -20,5 +20,8 @@
 .env.production.local
 .history
 
+# IDE
+.vscode
+
 # secrets
 secrets.*.js
