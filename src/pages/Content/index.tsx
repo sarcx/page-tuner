@@ -364,3 +364,4 @@ if (location.href.match(/https:\/\/github.com/)) {
 // TODO: Move reviewed  checkbox on the right in GitHub
 // TODO: Add auto approve button on PRs
 // TODO: Expand all files
+// TODO: Highlight selected word
