@@ -343,9 +343,7 @@ async function initMarkFileAsViewed() {
 
   document.addEventListener('mouseover', (e: MouseEvent) => {
     const diffFileContainer = (e.target as HTMLElement).closest('[id^="diff-"]')
-    const viewedBtn = diffFileContainer?.querySelector<HTMLButtonElement>(
-      'button[aria-label="Not Viewed"]'
-    ) ?? null
+    const viewedBtn = diffFileContainer?.querySelector<HTMLButtonElement>('button[aria-label="Not Viewed"]') ?? null
     setHint(viewedBtn)
   })
 
