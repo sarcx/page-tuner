@@ -361,6 +361,101 @@ if (location.href.match(/https:\/\/github.com/)) {
   initMarkFileAsViewed()
 }
 
+// Go to line in editor
+async function initGoToLineInEditor() {
+  const rules = await getRuleDefinitions()
+  if (!rules.goToLineInEditorRule?.enabled) return
+  if (!location.href.match(/https:\/\/github.com/)) return
+
+  printLine('Go to line in editor automation is running...')
+
+  const EDITOR_SCHEME = 'cursor'
+  const INJECTED_CLASS = 'pt-goto-editor-btn'
+  const repoMappings: Record<string, string> = rules.goToLineInEditorRule?.specifics?.repoMappings || {}
+
+  function getOrgRepo(): string | null {
+    const match = location.pathname.match(/^\/([^/]+\/[^/]+)/)
+    return match ? match[1] : null
+  }
+
+  function getLocalRoot(): string | null {
+    const orgRepo = getOrgRepo()
+    if (!orgRepo) return null
+    return repoMappings[orgRepo] || null
+  }
+
+  function getFilePathForDiff(diffContainer: Element): string | null {
+    const expandBtn = diffContainer.querySelector<HTMLButtonElement>('button[data-file-path]')
+    if (expandBtn) return expandBtn.getAttribute('data-file-path')
+
+    const codeEl = diffContainer.querySelector<HTMLElement>('.DiffFileHeader-module__file-name__VVXpg a code')
+    if (codeEl) {
+      return codeEl.textContent?.replace(/\u200e/g, '').trim() || null
+    }
+
+    return null
+  }
+
+  function createEditorButton(addCommentBtn: HTMLButtonElement, filePath: string, lineNumber: number): HTMLButtonElement {
+    const btn = addCommentBtn.cloneNode(false) as HTMLButtonElement
+    btn.classList.add(INJECTED_CLASS)
+    btn.removeAttribute('data-add-comment-button')
+    btn.setAttribute('aria-label', `Open ${filePath}:${lineNumber} in editor`)
+
+    btn.innerHTML = `<svg aria-hidden="true" focusable="false" class="octicon" viewBox="85 89 343 334" width="14" height="14" fill="currentColor" display="inline-block" overflow="visible" style="vertical-align:text-bottom;"><path d="M255.428 423l148.991-83.5L255.428 256l-148.99 83.5z" opacity=".6"/><path d="M404.419 339.5v-167L255.428 89v167z" opacity=".3"/><path d="M255.428 89l-148.99 83.5v167l148.99-83.5z" opacity=".5"/><path d="M404.419 172.5L255.428 423V256z" opacity=".85"/><path d="M404.419 172.5L255.428 256l-148.99-83.5z"/></svg>`
+
+    btn.addEventListener('click', e => {
+      e.preventDefault()
+      e.stopPropagation()
+      const localRoot = getLocalRoot()
+      if (!localRoot) {
+        alert(`No local path configured for "${getOrgRepo()}". Add it in the Page Tuner popup under "Go to line in editor".`)
+        return
+      }
+      const cleanPath = filePath.replace(/^\/+/, '')
+      const root = localRoot.replace(/\/+$/, '')
+      window.location.href = `${EDITOR_SCHEME}://file/${root}/${cleanPath}:${lineNumber}`
+    })
+
+    return btn
+  }
+
+  function injectButtons() {
+    const addCommentButtons = document.querySelectorAll<HTMLButtonElement>('button[data-add-comment-button="true"]')
+
+    for (const addBtn of Array.from(addCommentButtons)) {
+      const container = addBtn.closest('div.d-flex.flex-row') as HTMLElement | null
+      if (!container) continue
+      if (container.querySelector(`.${INJECTED_CLASS}`)) continue
+
+      const lineCell = addBtn.closest('td[data-line-number]') as HTMLElement | null
+      const lineNumber = lineCell?.getAttribute('data-line-number')
+      if (!lineNumber) continue
+
+      const diffContainer = addBtn.closest('[id^="diff-"]')
+      if (!diffContainer) continue
+
+      const filePath = getFilePathForDiff(diffContainer)
+      if (!filePath) continue
+
+      const editorBtn = createEditorButton(addBtn, filePath, parseInt(lineNumber, 10))
+      container.appendChild(editorBtn)
+    }
+  }
+
+  const pageContent = document.querySelector('div[class*="PageLayout-Content"]')
+  if (pageContent) {
+    const observer = new MutationObserver(injectButtons)
+    observer.observe(pageContent, {childList: true, subtree: true})
+  }
+
+  injectButtons()
+}
+
+if (location.href.match(/https:\/\/github.com/)) {
+  initGoToLineInEditor()
+}
+
 // TODO: Move reviewed  checkbox on the right in GitHub
 // TODO: Add auto approve button on PRs
 // TODO: Expand all files

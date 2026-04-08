@@ -28,11 +28,11 @@ async function initializeRules() {
     if (newRulesMap.has(key)) {
       const newRule = newRulesMap.get(key)
 
-      // If the rule was manually changed (has enabled state), keep it
       if (typeof value.enabled === 'boolean') {
         rulesToStore[key] = {
           ...newRule,
-          enabled: value.enabled
+          enabled: value.enabled,
+          specifics: {...(newRule.specifics || {}), ...(value.specifics || {})}
         }
       } else {
         // Rule wasn't manually changed, update it

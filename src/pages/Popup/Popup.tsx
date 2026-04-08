@@ -9,6 +9,8 @@ function Popup() {
   const [moveCompareButtonRule, setMoveCompareButtonRule] = useState<boolean>(false)
   const [peakonRememberAnswersRule, setPeakonRememberAnswersRule] = useState<boolean>(false)
   const [markFileAsViewedRule, setMarkFileAsViewedRule] = useState<boolean>(false)
+  const [goToLineInEditorRule, setGoToLineInEditorRule] = useState<boolean>(false)
+  const [repoMappingsText, setRepoMappingsText] = useState<string>('')
 
   useEffect(() => {
     async function initRules() {
@@ -17,6 +19,14 @@ function Popup() {
       setMoveCompareButtonRule(!!rules.moveCompareButtonRule?.enabled)
       setPeakonRememberAnswersRule(!!rules.peakonRememberAnswersRule?.enabled)
       setMarkFileAsViewedRule(!!rules.markFileAsViewedRule?.enabled)
+      setGoToLineInEditorRule(!!rules.goToLineInEditorRule?.enabled)
+
+      const mappings: Record<string, string> = rules.goToLineInEditorRule?.specifics?.repoMappings || {}
+      setRepoMappingsText(
+        Object.entries(mappings)
+          .map(([repo, path]) => `${repo} = ${path}`)
+          .join('\n')
+      )
     }
 
     initRules()
@@ -102,6 +112,44 @@ function Popup() {
     })
   }
 
+  function parseRepoMappings(text: string): Record<string, string> {
+    const mappings: Record<string, string> = {}
+    for (const line of text.split('\n')) {
+      const trimmed = line.trim()
+      if (!trimmed || !trimmed.includes('=')) continue
+      const [repo, ...rest] = trimmed.split('=')
+      const repoKey = repo.trim()
+      const pathValue = rest.join('=').trim()
+      if (repoKey && pathValue) mappings[repoKey] = pathValue
+    }
+    return mappings
+  }
+
+  function saveGoToLineRule(enabled: boolean, mappingsText: string) {
+    getRuleDefinitions().then(rules => {
+      chrome.storage.local.set({
+        [STORAGE_KEY]: {
+          ...rules,
+          goToLineInEditorRule: {
+            enabled,
+            specifics: {repoMappings: parseRepoMappings(mappingsText)}
+          }
+        }
+      })
+    })
+  }
+
+  const onChangeGoToLineInEditorToggle = (e: ChangeEvent<HTMLInputElement>): void => {
+    const newValue = e.target.checked
+    setGoToLineInEditorRule(newValue)
+    saveGoToLineRule(newValue, repoMappingsText)
+  }
+
+  const onChangeRepoMappings = (e: ChangeEvent<HTMLTextAreaElement>): void => {
+    setRepoMappingsText(e.target.value)
+    saveGoToLineRule(goToLineInEditorRule, e.target.value)
+  }
+
   return (
     <div className="body">
       <div className="logo">
@@ -121,6 +169,32 @@ function Popup() {
           <Switch value={markFileAsViewedRule} onChange={onChangeMarkFileAsViewedToggle} />
           <span> Mark file as viewed (Shift+Space)</span>
         </li>
+        <li>
+          <Switch value={goToLineInEditorRule} onChange={onChangeGoToLineInEditorToggle} />
+          <span> Go to line in editor</span>
+        </li>
+        {goToLineInEditorRule && (
+          <li style={{flexDirection: 'column', gap: '4px'}}>
+            <span style={{fontSize: '11px', opacity: 0.7}}>Repo mappings (org/repo = /local/path):</span>
+            <textarea
+              value={repoMappingsText}
+              onChange={onChangeRepoMappings}
+              placeholder={'myorg/my-repo = /Users/me/Projects/my-repo'}
+              rows={3}
+              style={{
+                width: '100%',
+                fontSize: '11px',
+                fontFamily: 'monospace',
+                background: '#555',
+                color: 'white',
+                border: '1px solid #888',
+                borderRadius: '4px',
+                padding: '4px',
+                resize: 'vertical',
+              }}
+            />
+          </li>
+        )}
       </ul>
       <div>Peakon tasks</div>
       <ul>
