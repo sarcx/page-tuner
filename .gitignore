@@ -21,7 +21,8 @@
 .history
 
 # IDE
-.vscode
+.vscode/*
+!.vscode/tasks.json
 
 # secrets
 secrets.*.js
