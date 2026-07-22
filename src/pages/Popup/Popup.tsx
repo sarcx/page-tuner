@@ -9,6 +9,7 @@ function Popup() {
   const [moveCompareButtonRule, setMoveCompareButtonRule] = useState<boolean>(false)
   const [peakonRememberAnswersRule, setPeakonRememberAnswersRule] = useState<boolean>(false)
   const [markFileAsViewedRule, setMarkFileAsViewedRule] = useState<boolean>(false)
+  const [autoExpandLargeDiffRule, setAutoExpandLargeDiffRule] = useState<boolean>(false)
   const [goToLineInEditorRule, setGoToLineInEditorRule] = useState<boolean>(false)
   const [repoMappingsText, setRepoMappingsText] = useState<string>('')
 
@@ -19,6 +20,7 @@ function Popup() {
       setMoveCompareButtonRule(!!rules.moveCompareButtonRule?.enabled)
       setPeakonRememberAnswersRule(!!rules.peakonRememberAnswersRule?.enabled)
       setMarkFileAsViewedRule(!!rules.markFileAsViewedRule?.enabled)
+      setAutoExpandLargeDiffRule(!!rules.autoExpandLargeDiffRule?.enabled)
       setGoToLineInEditorRule(!!rules.goToLineInEditorRule?.enabled)
 
       const mappings: Record<string, string> = rules.goToLineInEditorRule?.specifics?.repoMappings || {}
@@ -112,6 +114,26 @@ function Popup() {
     })
   }
 
+  const onChangeAutoExpandLargeDiffToggle = (e: ChangeEvent<HTMLInputElement>): void => {
+    const newValue = e.target.checked
+    setAutoExpandLargeDiffRule(newValue)
+    getRuleDefinitions().then(rules => {
+      chrome.storage.local
+        .set({
+          [STORAGE_KEY]: {
+            ...rules,
+            autoExpandLargeDiffRule: {
+              enabled: newValue,
+              specifics: rules.autoExpandLargeDiffRule?.specifics || {}
+            }
+          }
+        })
+        .then(() => {
+          // TODO: send message to all tabs for the state of this rule
+        })
+    })
+  }
+
   function parseRepoMappings(text: string): Record<string, string> {
     const mappings: Record<string, string> = {}
     for (const line of text.split('\n')) {
@@ -168,6 +190,10 @@ function Popup() {
         <li>
           <Switch value={markFileAsViewedRule} onChange={onChangeMarkFileAsViewedToggle} />
           <span> Mark file as viewed (Shift+Space)</span>
+        </li>
+        <li>
+          <Switch value={autoExpandLargeDiffRule} onChange={onChangeAutoExpandLargeDiffToggle} />
+          <span> Auto expand large diffs</span>
         </li>
         <li>
           <Switch value={goToLineInEditorRule} onChange={onChangeGoToLineInEditorToggle} />
