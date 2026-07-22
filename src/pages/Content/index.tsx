@@ -1,4 +1,5 @@
 import {getRuleDefinitions} from '../utils/messages'
+import {wireMarkFileAsViewed} from './mark-file-as-viewed'
 import {clickOn, findAllEl, findEl, isClicked, markAsClicked, printLine, sleep} from './modules'
 
 printLine('Must reload extension for modifications to take effect.')
@@ -318,43 +319,7 @@ async function initMarkFileAsViewed() {
 
   printLine('Mark file as viewed automation is running...')
 
-  let currentHintBtn: HTMLButtonElement | null = null
-
-  function setHint(viewedBtn: HTMLButtonElement | null) {
-    if (viewedBtn === currentHintBtn) return
-
-    if (currentHintBtn) {
-      currentHintBtn.querySelector('.pt-shortcut-hint')?.remove()
-      currentHintBtn = null
-    }
-
-    if (viewedBtn) {
-      const label = viewedBtn.querySelector('[data-component="text"]')
-      if (label) {
-        const hint = document.createElement('span')
-        hint.className = 'pt-shortcut-hint'
-        hint.textContent = ' (shift+space)'
-        hint.style.cssText = 'font-size:10px;opacity:0.6;font-weight:normal;'
-        label.appendChild(hint)
-        currentHintBtn = viewedBtn
-      }
-    }
-  }
-
-  document.addEventListener('mouseover', (e: MouseEvent) => {
-    const diffFileContainer = (e.target as HTMLElement).closest('[id^="diff-"]')
-    const viewedBtn = diffFileContainer?.querySelector<HTMLButtonElement>('button[aria-label="Not Viewed"]') ?? null
-    setHint(viewedBtn)
-  })
-
-  document.addEventListener('keydown', (e: KeyboardEvent) => {
-    if (!e.shiftKey || e.key !== ' ') return
-    if (!currentHintBtn) return
-
-    e.preventDefault()
-    currentHintBtn.click()
-    printLine(`Marked file as viewed via Shift+Space`)
-  })
+  wireMarkFileAsViewed()
 }
 
 if (location.href.match(/https:\/\/github.com/)) {
