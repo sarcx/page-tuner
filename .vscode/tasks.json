@@ -27,6 +27,21 @@
         "reveal": "always",
         "panel": "dedicated"
       }
+    },
+    {
+      "label": "npm build",
+      "type": "npm",
+      "script": "build",
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "clear": true
+      }
     }
   ]
 }
