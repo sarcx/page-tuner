@@ -16,5 +16,6 @@ export const rules = [
   {name: 'peakonRememberAnswersRule', specifics: {}},
   {name: 'markFileAsViewedRule', specifics: {}},
   {name: 'goToLineInEditorRule', specifics: {repoMappings: {}}},
-  {name: 'autoExpandLargeDiffRule', specifics: {autoGenerateFileNames}}
+  {name: 'autoExpandLargeDiffRule', specifics: {autoGenerateFileNames}},
+  {name: 'copyFileNameRule', specifics: {}}
 ]

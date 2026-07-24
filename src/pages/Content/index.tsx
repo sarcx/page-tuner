@@ -1,5 +1,6 @@
 import {getRuleDefinitions} from '../utils/messages'
 import {autoExpandLargeDiffs} from './auto-expand-large-diff'
+import {injectCopyFileNameButtons} from './copy-file-name'
 import {wireMarkFileAsViewed} from './mark-file-as-viewed'
 import {clickOn, findAllEl, findEl, isClicked, markAsClicked, printLine, sleep} from './modules'
 
@@ -444,6 +445,27 @@ async function initAutoExpandLargeDiff() {
 
 if (location.href.match(/https:\/\/github.com/)) {
   initAutoExpandLargeDiff()
+}
+
+// Copy the file name of a review thread to the clipboard
+async function initCopyFileName() {
+  const rules = await getRuleDefinitions()
+  if (!rules.copyFileNameRule?.enabled) return
+  if (!location.href.match(/https:\/\/github.com/)) return
+
+  printLine('Copy file name automation is running...')
+
+  const mainLayout = document.querySelector('div[class*="PageLayout-Content"]')
+  if (mainLayout) {
+    const observer = new MutationObserver(injectCopyFileNameButtons)
+    observer.observe(mainLayout, {childList: true, subtree: true})
+  }
+
+  injectCopyFileNameButtons()
+}
+
+if (location.href.match(/https:\/\/github.com/)) {
+  initCopyFileName()
 }
 
 // TODO: Move reviewed  checkbox on the right in GitHub

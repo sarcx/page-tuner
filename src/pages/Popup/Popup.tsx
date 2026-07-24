@@ -11,6 +11,7 @@ function Popup() {
   const [markFileAsViewedRule, setMarkFileAsViewedRule] = useState<boolean>(false)
   const [autoExpandLargeDiffRule, setAutoExpandLargeDiffRule] = useState<boolean>(false)
   const [goToLineInEditorRule, setGoToLineInEditorRule] = useState<boolean>(false)
+  const [copyFileNameRule, setCopyFileNameRule] = useState<boolean>(false)
   const [repoMappingsText, setRepoMappingsText] = useState<string>('')
 
   useEffect(() => {
@@ -22,6 +23,7 @@ function Popup() {
       setMarkFileAsViewedRule(!!rules.markFileAsViewedRule?.enabled)
       setAutoExpandLargeDiffRule(!!rules.autoExpandLargeDiffRule?.enabled)
       setGoToLineInEditorRule(!!rules.goToLineInEditorRule?.enabled)
+      setCopyFileNameRule(!!rules.copyFileNameRule?.enabled)
 
       const mappings: Record<string, string> = rules.goToLineInEditorRule?.specifics?.repoMappings || {}
       setRepoMappingsText(
@@ -167,6 +169,26 @@ function Popup() {
     saveGoToLineRule(newValue, repoMappingsText)
   }
 
+  const onChangeCopyFileNameToggle = (e: ChangeEvent<HTMLInputElement>): void => {
+    const newValue = e.target.checked
+    setCopyFileNameRule(newValue)
+    getRuleDefinitions().then(rules => {
+      chrome.storage.local
+        .set({
+          [STORAGE_KEY]: {
+            ...rules,
+            copyFileNameRule: {
+              enabled: newValue,
+              specifics: rules.copyFileNameRule?.specifics || {}
+            }
+          }
+        })
+        .then(() => {
+          // TODO: send message to all tabs for the state of this rule
+        })
+    })
+  }
+
   const onChangeRepoMappings = (e: ChangeEvent<HTMLTextAreaElement>): void => {
     setRepoMappingsText(e.target.value)
     saveGoToLineRule(goToLineInEditorRule, e.target.value)
@@ -198,6 +220,10 @@ function Popup() {
         <li>
           <Switch value={goToLineInEditorRule} onChange={onChangeGoToLineInEditorToggle} />
           <span> Go to line in editor</span>
+        </li>
+        <li>
+          <Switch value={copyFileNameRule} onChange={onChangeCopyFileNameToggle} />
+          <span> Copy file name from review threads</span>
         </li>
         {goToLineInEditorRule && (
           <li style={{flexDirection: 'column', gap: '4px'}}>
