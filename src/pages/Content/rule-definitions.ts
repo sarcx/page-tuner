@@ -18,5 +18,6 @@ export const rules = [
   {name: 'goToLineInEditorRule', specifics: {repoMappings: {}}},
   {name: 'autoExpandLargeDiffRule', specifics: {autoGenerateFileNames}},
   {name: 'copyFileNameRule', specifics: {}},
-  {name: 'copyReviewLinksRule', specifics: {}}
+  {name: 'copyReviewLinksRule', specifics: {}},
+  {name: 'submitReviewShortcutsRule', specifics: {}}
 ]

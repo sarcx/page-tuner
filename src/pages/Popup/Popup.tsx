@@ -13,6 +13,7 @@ function Popup() {
   const [goToLineInEditorRule, setGoToLineInEditorRule] = useState<boolean>(false)
   const [copyFileNameRule, setCopyFileNameRule] = useState<boolean>(false)
   const [copyReviewLinksRule, setCopyReviewLinksRule] = useState<boolean>(false)
+  const [submitReviewShortcutsRule, setSubmitReviewShortcutsRule] = useState<boolean>(false)
   const [repoMappingsText, setRepoMappingsText] = useState<string>('')
 
   useEffect(() => {
@@ -26,6 +27,7 @@ function Popup() {
       setGoToLineInEditorRule(!!rules.goToLineInEditorRule?.enabled)
       setCopyFileNameRule(!!rules.copyFileNameRule?.enabled)
       setCopyReviewLinksRule(!!rules.copyReviewLinksRule?.enabled)
+      setSubmitReviewShortcutsRule(!!rules.submitReviewShortcutsRule?.enabled)
 
       const mappings: Record<string, string> = rules.goToLineInEditorRule?.specifics?.repoMappings || {}
       setRepoMappingsText(
@@ -211,6 +213,26 @@ function Popup() {
     })
   }
 
+  const onChangeSubmitReviewShortcutsToggle = (e: ChangeEvent<HTMLInputElement>): void => {
+    const newValue = e.target.checked
+    setSubmitReviewShortcutsRule(newValue)
+    getRuleDefinitions().then(rules => {
+      chrome.storage.local
+        .set({
+          [STORAGE_KEY]: {
+            ...rules,
+            submitReviewShortcutsRule: {
+              enabled: newValue,
+              specifics: rules.submitReviewShortcutsRule?.specifics || {}
+            }
+          }
+        })
+        .then(() => {
+          // TODO: send message to all tabs for the state of this rule
+        })
+    })
+  }
+
   const onChangeRepoMappings = (e: ChangeEvent<HTMLTextAreaElement>): void => {
     setRepoMappingsText(e.target.value)
     saveGoToLineRule(goToLineInEditorRule, e.target.value)
@@ -250,6 +272,10 @@ function Popup() {
         <li>
           <Switch value={copyReviewLinksRule} onChange={onChangeCopyReviewLinksToggle} />
           <span> Copy comment link & path in review threads</span>
+        </li>
+        <li>
+          <Switch value={submitReviewShortcutsRule} onChange={onChangeSubmitReviewShortcutsToggle} />
+          <span> Approve & 👁 shortcuts next to Submit review</span>
         </li>
         {goToLineInEditorRule && (
           <li style={{flexDirection: 'column', gap: '4px'}}>

@@ -4,6 +4,7 @@ import {injectCopyFileNameButtons} from './copy-file-name'
 import {injectReviewLinks} from './copy-review-links'
 import {wireMarkFileAsViewed} from './mark-file-as-viewed'
 import {clickOn, findAllEl, findEl, isClicked, markAsClicked, printLine, sleep} from './modules'
+import {wireSubmitReviewShortcuts} from './submit-review-shortcuts'
 
 printLine('Must reload extension for modifications to take effect.')
 
@@ -490,7 +491,21 @@ if (location.href.match(/https:\/\/github.com/)) {
   initCopyReviewLinks()
 }
 
+// Approve and 👁 shortcut buttons next to Submit review
+async function initSubmitReviewShortcuts() {
+  const rules = await getRuleDefinitions()
+  if (!rules.submitReviewShortcutsRule?.enabled) return
+  if (!location.href.match(/https:\/\/github.com/)) return
+
+  printLine('Submit review shortcuts automation is running...')
+
+  wireSubmitReviewShortcuts()
+}
+
+if (location.href.match(/https:\/\/github.com/)) {
+  initSubmitReviewShortcuts()
+}
+
 // TODO: Move reviewed  checkbox on the right in GitHub
-// TODO: Add auto approve button on PRs
 // TODO: Expand all files
 // TODO: Highlight selected word
