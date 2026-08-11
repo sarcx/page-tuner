@@ -2,7 +2,6 @@
   "manifest_version": 3,
   "name": "Page Tuner",
   "description": "Shape any page as you like",
-  "options_page": "options.html",
   "background": { "service_worker": "background.bundle.js" },
   "action": {
     "default_popup": "popup.html",
