@@ -17,5 +17,6 @@ export const rules = [
   {name: 'markFileAsViewedRule', specifics: {}},
   {name: 'goToLineInEditorRule', specifics: {repoMappings: {}}},
   {name: 'autoExpandLargeDiffRule', specifics: {autoGenerateFileNames}},
-  {name: 'copyFileNameRule', specifics: {}}
+  {name: 'copyFileNameRule', specifics: {}},
+  {name: 'copyReviewLinksRule', specifics: {}}
 ]

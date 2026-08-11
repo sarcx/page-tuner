@@ -12,6 +12,7 @@ function Popup() {
   const [autoExpandLargeDiffRule, setAutoExpandLargeDiffRule] = useState<boolean>(false)
   const [goToLineInEditorRule, setGoToLineInEditorRule] = useState<boolean>(false)
   const [copyFileNameRule, setCopyFileNameRule] = useState<boolean>(false)
+  const [copyReviewLinksRule, setCopyReviewLinksRule] = useState<boolean>(false)
   const [repoMappingsText, setRepoMappingsText] = useState<string>('')
 
   useEffect(() => {
@@ -24,6 +25,7 @@ function Popup() {
       setAutoExpandLargeDiffRule(!!rules.autoExpandLargeDiffRule?.enabled)
       setGoToLineInEditorRule(!!rules.goToLineInEditorRule?.enabled)
       setCopyFileNameRule(!!rules.copyFileNameRule?.enabled)
+      setCopyReviewLinksRule(!!rules.copyReviewLinksRule?.enabled)
 
       const mappings: Record<string, string> = rules.goToLineInEditorRule?.specifics?.repoMappings || {}
       setRepoMappingsText(
@@ -189,6 +191,26 @@ function Popup() {
     })
   }
 
+  const onChangeCopyReviewLinksToggle = (e: ChangeEvent<HTMLInputElement>): void => {
+    const newValue = e.target.checked
+    setCopyReviewLinksRule(newValue)
+    getRuleDefinitions().then(rules => {
+      chrome.storage.local
+        .set({
+          [STORAGE_KEY]: {
+            ...rules,
+            copyReviewLinksRule: {
+              enabled: newValue,
+              specifics: rules.copyReviewLinksRule?.specifics || {}
+            }
+          }
+        })
+        .then(() => {
+          // TODO: send message to all tabs for the state of this rule
+        })
+    })
+  }
+
   const onChangeRepoMappings = (e: ChangeEvent<HTMLTextAreaElement>): void => {
     setRepoMappingsText(e.target.value)
     saveGoToLineRule(goToLineInEditorRule, e.target.value)
@@ -224,6 +246,10 @@ function Popup() {
         <li>
           <Switch value={copyFileNameRule} onChange={onChangeCopyFileNameToggle} />
           <span> Copy file name from review threads</span>
+        </li>
+        <li>
+          <Switch value={copyReviewLinksRule} onChange={onChangeCopyReviewLinksToggle} />
+          <span> Copy comment link & path in review threads</span>
         </li>
         {goToLineInEditorRule && (
           <li style={{flexDirection: 'column', gap: '4px'}}>

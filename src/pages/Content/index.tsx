@@ -1,6 +1,7 @@
 import {getRuleDefinitions} from '../utils/messages'
 import {autoExpandLargeDiffs} from './auto-expand-large-diff'
 import {injectCopyFileNameButtons} from './copy-file-name'
+import {injectReviewLinks} from './copy-review-links'
 import {wireMarkFileAsViewed} from './mark-file-as-viewed'
 import {clickOn, findAllEl, findEl, isClicked, markAsClicked, printLine, sleep} from './modules'
 
@@ -466,6 +467,27 @@ async function initCopyFileName() {
 
 if (location.href.match(/https:\/\/github.com/)) {
   initCopyFileName()
+}
+
+// Copy a review comment's permalink and file path from its header
+async function initCopyReviewLinks() {
+  const rules = await getRuleDefinitions()
+  if (!rules.copyReviewLinksRule?.enabled) return
+  if (!location.href.match(/https:\/\/github.com/)) return
+
+  printLine('Copy review links automation is running...')
+
+  const mainLayout = document.querySelector('div[class*="PageLayout-Content"]')
+  if (mainLayout) {
+    const observer = new MutationObserver(injectReviewLinks)
+    observer.observe(mainLayout, {childList: true, subtree: true})
+  }
+
+  injectReviewLinks()
+}
+
+if (location.href.match(/https:\/\/github.com/)) {
+  initCopyReviewLinks()
 }
 
 // TODO: Move reviewed  checkbox on the right in GitHub
