@@ -49,11 +49,19 @@ export function wireMarkFileAsViewed(): () => void {
     return null
   }
 
+  // `:hover` matches every ancestor of the cursor, so the last match is the element it actually
+  // sits on. Querying for a hovered `[id^="diff-"]` directly would hand back the outermost one
+  // instead — a wrapper around the whole file list resolves to the first file on the page.
+  function hoveredElement(): Element | null {
+    const hoverChain = document.querySelectorAll(':hover')
+    return hoverChain[hoverChain.length - 1] ?? null
+  }
+
   // The browser's own hit test wins when it has one — Chrome recomputes `:hover` and even fires
   // a mouseover as content scrolls under a still cursor. The viewport check rejects a hover left
   // behind off-screen; coordinates cover the rest, including the carried-over position.
   function containerUnderCursor(): Element | null {
-    const hovered = document.querySelector('[id^="diff-"]:hover')
+    const hovered = diffContainerOf(hoveredElement())
     if (hovered && isInViewport(hovered)) return hovered
 
     return pointer ? diffContainerOf(document.elementFromPoint(pointer.x, pointer.y)) : null

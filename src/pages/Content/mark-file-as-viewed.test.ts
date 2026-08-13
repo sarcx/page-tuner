@@ -31,11 +31,14 @@ function stubElementFromPoint(el: Element | null) {
   document.elementFromPoint = () => el
 }
 
-// jsdom has no layout, so `:hover` never matches — route that one selector to a chosen file.
-function stubHover(id: string) {
-  const original = document.querySelector.bind(document)
-  document.querySelector = (selector: string) =>
-    selector.includes(':hover') ? document.getElementById(id) : original(selector)
+// jsdom has no layout, so `:hover` never matches — stand in for the browser, which reports the
+// whole ancestor line of the cursor, outermost first.
+function stubHover(el: Element | null) {
+  const chain: Element[] = []
+  for (let node = el; node; node = node.parentElement) chain.unshift(node)
+
+  const original = document.querySelectorAll.bind(document)
+  document.querySelectorAll = (selector: string) => (selector === ':hover' ? (chain as any) : original(selector))
 }
 
 function notViewedButtonIn(id: string): HTMLButtonElement {
@@ -45,7 +48,7 @@ function notViewedButtonIn(id: string): HTMLButtonElement {
 describe('wireMarkFileAsViewed', () => {
   let dispose: () => void
   let rafSpy: jest.SpyInstance
-  const originalQuerySelector = document.querySelector
+  const originalQuerySelectorAll = document.querySelectorAll
 
   beforeEach(() => {
     rafSpy = jest.spyOn(window, 'requestAnimationFrame').mockImplementation(cb => {
@@ -59,7 +62,7 @@ describe('wireMarkFileAsViewed', () => {
   afterEach(() => {
     dispose?.()
     rafSpy.mockRestore()
-    document.querySelector = originalQuerySelector
+    document.querySelectorAll = originalQuerySelectorAll
     sessionStorage.clear()
     document.body.innerHTML = ''
   })
@@ -154,7 +157,7 @@ describe('wireMarkFileAsViewed', () => {
     const secondClick = jest.spyOn(notViewedButtonIn('diff-two'), 'click')
     stubRect(document.getElementById('diff-one')!, {top: -400, bottom: 200})
     stubRect(document.getElementById('diff-two')!, {top: 200, bottom: 800})
-    stubHover('diff-two')
+    stubHover(document.getElementById('diff-two'))
 
     dispose = wireMarkFileAsViewed()
     document.dispatchEvent(new Event('scroll'))
@@ -169,12 +172,30 @@ describe('wireMarkFileAsViewed', () => {
     const secondClick = jest.spyOn(notViewedButtonIn('diff-two'), 'click')
     stubRect(document.getElementById('diff-one')!, {top: -900, bottom: -300})
     stubRect(document.getElementById('diff-two')!, {top: 200, bottom: 800})
-    stubHover('diff-one')
+    stubHover(document.getElementById('diff-one'))
 
     dispose = wireMarkFileAsViewed()
     shiftSpaceFrom(document.body)
 
     expect(secondClick).toHaveBeenCalledTimes(1)
+  })
+
+  it('marks the hovered file, not the first one under a wrapper that hover also matches', () => {
+    document.body.innerHTML = `<div id="diff-wrapper">
+      ${diffFileMarkup({id: 'diff-one'})}${diffFileMarkup({id: 'diff-two'})}
+    </div>`
+    const firstClick = jest.spyOn(notViewedButtonIn('diff-one'), 'click')
+    const secondClick = jest.spyOn(notViewedButtonIn('diff-two'), 'click')
+    stubRect(document.getElementById('diff-wrapper')!, {top: 0, bottom: 800})
+    stubRect(document.getElementById('diff-one')!, {top: 0, bottom: 400})
+    stubRect(document.getElementById('diff-two')!, {top: 400, bottom: 800})
+    stubHover(document.querySelector('#diff-two .cell'))
+
+    dispose = wireMarkFileAsViewed()
+    shiftSpaceFrom(document.body)
+
+    expect(secondClick).toHaveBeenCalledTimes(1)
+    expect(firstClick).not.toHaveBeenCalled()
   })
 
   it('aims at the cursor position carried over from the previous page', () => {
