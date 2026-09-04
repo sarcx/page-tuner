@@ -3,7 +3,7 @@ import {autoExpandLargeDiffs} from './auto-expand-large-diff'
 import {injectCopyFileNameButtons} from './copy-file-name'
 import {injectReviewLinks} from './copy-review-links'
 import {wireMarkFileAsViewed} from './mark-file-as-viewed'
-import {clickOn, findAllEl, findEl, isClicked, markAsClicked, printLine, sleep} from './modules'
+import {clickOn, findAllEl, findEl, isClicked, markAsClicked, printLine, runOnDomChanges, sleep} from './modules'
 import {wireSubmitReviewShortcuts} from './submit-review-shortcuts'
 
 printLine('Must reload extension for modifications to take effect.')
@@ -56,13 +56,7 @@ async function onLoad() {
 }
 
 if (location.href.match(/https:\/\/github.com/)) {
-  const mainLayout = document.querySelector('div[class*="PageLayout-Content"]')
-  if (mainLayout) {
-    const observer = new MutationObserver(onLoad)
-    observer.observe(mainLayout, {childList: true, subtree: true, characterData: true, attributes: true})
-  } else {
-    printLine('Could not find div[class*="PageLayout-Content"]')
-  }
+  runOnDomChanges(onLoad)
 }
 
 async function exposeCompareAndOpenPullRequestButtons() {
@@ -412,13 +406,7 @@ async function initGoToLineInEditor() {
     }
   }
 
-  const pageContent = document.querySelector('div[class*="PageLayout-Content"]')
-  if (pageContent) {
-    const observer = new MutationObserver(injectButtons)
-    observer.observe(pageContent, {childList: true, subtree: true})
-  }
-
-  injectButtons()
+  runOnDomChanges(injectButtons)
 }
 
 if (location.href.match(/https:\/\/github.com/)) {
@@ -434,15 +422,8 @@ async function initAutoExpandLargeDiff() {
   printLine('Auto expand large diff automation is running...')
 
   const autoGenerateFileNames: string[] = rules.autoExpandLargeDiffRule.specifics?.autoGenerateFileNames || []
-  const run = () => autoExpandLargeDiffs(autoGenerateFileNames)
 
-  const mainLayout = document.querySelector('div[class*="PageLayout-Content"]')
-  if (mainLayout) {
-    const observer = new MutationObserver(run)
-    observer.observe(mainLayout, {childList: true, subtree: true})
-  }
-
-  run()
+  runOnDomChanges(() => autoExpandLargeDiffs(autoGenerateFileNames))
 }
 
 if (location.href.match(/https:\/\/github.com/)) {
@@ -457,13 +438,7 @@ async function initCopyFileName() {
 
   printLine('Copy file name automation is running...')
 
-  const mainLayout = document.querySelector('div[class*="PageLayout-Content"]')
-  if (mainLayout) {
-    const observer = new MutationObserver(injectCopyFileNameButtons)
-    observer.observe(mainLayout, {childList: true, subtree: true})
-  }
-
-  injectCopyFileNameButtons()
+  runOnDomChanges(injectCopyFileNameButtons)
 }
 
 if (location.href.match(/https:\/\/github.com/)) {
@@ -478,13 +453,7 @@ async function initCopyReviewLinks() {
 
   printLine('Copy review links automation is running...')
 
-  const mainLayout = document.querySelector('div[class*="PageLayout-Content"]')
-  if (mainLayout) {
-    const observer = new MutationObserver(injectReviewLinks)
-    observer.observe(mainLayout, {childList: true, subtree: true})
-  }
-
-  injectReviewLinks()
+  runOnDomChanges(injectReviewLinks)
 }
 
 if (location.href.match(/https:\/\/github.com/)) {

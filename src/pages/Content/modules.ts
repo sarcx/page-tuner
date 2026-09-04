@@ -47,3 +47,28 @@ export function isClicked(node: HTMLElement) {
 }
 
 export const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms))
+
+const DOM_CHANGE_THROTTLE_MS = 200
+
+// GitHub streams pull request files in as you scroll and remounts whole layout panes on every
+// client-side navigation, so a container looked up once at startup is either missing or already
+// detached by the time the fortieth file arrives. Watching the body outlives both. The throttle is
+// what makes that affordable: the callers rescan every diff on the page, which is far too much work
+// to repeat for each of the hundreds of mutations a single scroll produces.
+export function runOnDomChanges(run: () => void) {
+  let pending = false
+
+  const schedule = () => {
+    if (pending) return
+
+    pending = true
+    setTimeout(() => {
+      pending = false
+      run()
+    }, DOM_CHANGE_THROTTLE_MS)
+  }
+
+  new MutationObserver(schedule).observe(document.body, {childList: true, subtree: true})
+
+  run()
+}

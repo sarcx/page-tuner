@@ -1,4 +1,4 @@
-import {clickOn, findAllEl, findEl, isClicked, markAsClicked, sleep} from './modules'
+import {clickOn, findAllEl, findEl, isClicked, markAsClicked, runOnDomChanges, sleep} from './modules'
 
 describe('isClicked', () => {
   it('reflects the pt-clicked class', () => {
@@ -57,6 +57,42 @@ describe('findEl / findAllEl', () => {
   it('scopes the search to the given node', () => {
     const scope = document.getElementById('a')
     expect(findAllEl('.//span', scope)).toHaveLength(2)
+  })
+})
+
+describe('runOnDomChanges', () => {
+  const afterThrottleWindow = () => sleep(300)
+
+  afterEach(() => {
+    document.body.innerHTML = ''
+  })
+
+  it('runs once straight away', () => {
+    const run = jest.fn()
+
+    runOnDomChanges(run)
+
+    expect(run).toHaveBeenCalledTimes(1)
+  })
+
+  it('runs again for content appended after it started watching', async () => {
+    const run = jest.fn()
+    runOnDomChanges(run)
+
+    document.body.appendChild(document.createElement('div'))
+    await afterThrottleWindow()
+
+    expect(run).toHaveBeenCalledTimes(2)
+  })
+
+  it('collapses a burst of changes into a single run', async () => {
+    const run = jest.fn()
+    runOnDomChanges(run)
+
+    for (let i = 0; i < 50; i++) document.body.appendChild(document.createElement('div'))
+    await afterThrottleWindow()
+
+    expect(run).toHaveBeenCalledTimes(2)
   })
 })
 
