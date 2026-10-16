@@ -41,6 +41,10 @@ function stubHover(el: Element | null) {
   document.querySelectorAll = (selector: string) => (selector === ':hover' ? (chain as any) : original(selector))
 }
 
+function stubFocus(hasFocus: boolean) {
+  document.hasFocus = () => hasFocus
+}
+
 function notViewedButtonIn(id: string): HTMLButtonElement {
   return document.querySelector<HTMLButtonElement>(`#${id} button[aria-label="Not Viewed"]`)!
 }
@@ -49,6 +53,7 @@ describe('wireMarkFileAsViewed', () => {
   let dispose: () => void
   let rafSpy: jest.SpyInstance
   const originalQuerySelectorAll = document.querySelectorAll
+  const originalHasFocus = document.hasFocus
 
   beforeEach(() => {
     rafSpy = jest.spyOn(window, 'requestAnimationFrame').mockImplementation(cb => {
@@ -57,12 +62,16 @@ describe('wireMarkFileAsViewed', () => {
     })
     // jsdom does not implement elementFromPoint; browsers always do.
     stubElementFromPoint(null)
+    // jsdom reports an unfocused document by default, but a page the user is working on has
+    // focus. Tests about losing it say so themselves.
+    stubFocus(true)
   })
 
   afterEach(() => {
     dispose?.()
     rafSpy.mockRestore()
     document.querySelectorAll = originalQuerySelectorAll
+    document.hasFocus = originalHasFocus
     sessionStorage.clear()
     document.body.innerHTML = ''
   })
@@ -100,6 +109,53 @@ describe('wireMarkFileAsViewed', () => {
     hover(document.querySelector('.cell')!)
 
     expect(document.querySelector('.pt-shortcut-hint')?.textContent).toBe(' (shift+space)')
+  })
+
+  it('never offers the shortcut while the window is unfocused', () => {
+    document.body.innerHTML = diffFileMarkup()
+    stubFocus(false)
+
+    dispose = wireMarkFileAsViewed()
+    hover(document.querySelector('.cell')!)
+
+    expect(document.querySelector('.pt-shortcut-hint')).toBeNull()
+  })
+
+  it('withdraws the hint when the window loses focus', () => {
+    document.body.innerHTML = diffFileMarkup()
+
+    dispose = wireMarkFileAsViewed()
+    hover(document.querySelector('.cell')!)
+    stubFocus(false)
+    window.dispatchEvent(new Event('blur'))
+
+    expect(document.querySelector('.pt-shortcut-hint')).toBeNull()
+  })
+
+  it('keeps the hint away when an unfocused window is hovered again', () => {
+    document.body.innerHTML = diffFileMarkup({id: 'diff-one'}) + diffFileMarkup({id: 'diff-two'})
+
+    dispose = wireMarkFileAsViewed()
+    hover(document.querySelector('#diff-one .cell')!)
+    stubFocus(false)
+    window.dispatchEvent(new Event('blur'))
+    hover(document.querySelector('#diff-two .cell')!)
+
+    expect(document.querySelectorAll('.pt-shortcut-hint')).toHaveLength(0)
+  })
+
+  it('puts the hint back when the window regains focus', () => {
+    document.body.innerHTML = diffFileMarkup()
+
+    dispose = wireMarkFileAsViewed()
+    hover(document.querySelector('.cell')!)
+    stubElementFromPoint(document.querySelector('.cell'))
+    stubFocus(false)
+    window.dispatchEvent(new Event('blur'))
+    stubFocus(true)
+    window.dispatchEvent(new Event('focus'))
+
+    expect(document.querySelector('#diff-abc .pt-shortcut-hint')).not.toBeNull()
   })
 
   it('marks the file under the keyboard focus when the mouse never moved', () => {

@@ -77,19 +77,23 @@ export function wireMarkFileAsViewed(): () => void {
     return notViewedButtonIn(diffContainerOf(origin)) ?? firstVisibleNotViewedButton()
   }
 
+  // Shift+Space only reaches the page while the window holds focus, so an unfocused window must
+  // not advertise it. The guard belongs here rather than on the focus listeners alone, because
+  // hovering still fires mousemove on an unfocused window and would quietly put the hint back.
   function setHint(viewedBtn: HTMLButtonElement | null) {
-    if (viewedBtn === currentHintBtn) return
+    const target = document.hasFocus() ? viewedBtn : null
+    if (target === currentHintBtn) return
 
     if (currentHintBtn) {
       currentHintBtn.querySelector('.pt-shortcut-hint')?.remove()
       currentHintBtn = null
     }
 
-    if (!viewedBtn) return
+    if (!target) return
 
-    currentHintBtn = viewedBtn
+    currentHintBtn = target
 
-    const label = viewedBtn.querySelector('[data-component="text"]')
+    const label = target.querySelector('[data-component="text"]')
     if (label && !label.querySelector('.pt-shortcut-hint')) {
       const hint = document.createElement('span')
       hint.className = 'pt-shortcut-hint'
@@ -143,11 +147,16 @@ export function wireMarkFileAsViewed(): () => void {
     printLine(`Marked file as viewed via Shift+Space`)
   }
 
+  const onWindowBlur = () => setHint(null)
+  const onWindowFocus = () => setHint(resolveTarget())
+
   document.addEventListener('mousemove', onMouseMove)
   document.addEventListener('mouseover', onMouseMove)
   document.addEventListener('mouseleave', onMouseLeave)
   document.addEventListener('scroll', onScroll, {capture: true, passive: true})
   document.addEventListener('keydown', onKeyDown, true)
+  window.addEventListener('blur', onWindowBlur)
+  window.addEventListener('focus', onWindowFocus)
 
   return () => {
     document.removeEventListener('mousemove', onMouseMove)
@@ -155,6 +164,8 @@ export function wireMarkFileAsViewed(): () => void {
     document.removeEventListener('mouseleave', onMouseLeave)
     document.removeEventListener('scroll', onScroll, true)
     document.removeEventListener('keydown', onKeyDown, true)
+    window.removeEventListener('blur', onWindowBlur)
+    window.removeEventListener('focus', onWindowFocus)
     if (scrollFrame) cancelAnimationFrame(scrollFrame)
   }
 }
