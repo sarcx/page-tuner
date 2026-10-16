@@ -24,7 +24,7 @@ independently from the extension popup; every rule is off until you turn it on.
 
 | Rule | What it does |
 | --- | --- |
-| Remember survey answers | Stores your answer per question and highlights it when the question comes round again. |
+| Remember survey answers | Stores your answer per question and highlights it when the question comes round again. A badge in the bottom-right corner opens a panel listing which page selectors still match, what is on file for the question in front of you, and every answer stored so far. |
 
 ## Installing
 

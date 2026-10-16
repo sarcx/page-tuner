@@ -56,19 +56,24 @@ const DOM_CHANGE_THROTTLE_MS = 200
 // what makes that affordable: the callers rescan every diff on the page, which is far too much work
 // to repeat for each of the hundreds of mutations a single scroll produces.
 export function runOnDomChanges(run: () => void) {
-  let pending = false
+  let pending = 0
 
   const schedule = () => {
     if (pending) return
 
-    pending = true
-    setTimeout(() => {
-      pending = false
+    pending = window.setTimeout(() => {
+      pending = 0
       run()
     }, DOM_CHANGE_THROTTLE_MS)
   }
 
-  new MutationObserver(schedule).observe(document.body, {childList: true, subtree: true})
+  const observer = new MutationObserver(schedule)
+  observer.observe(document.body, {childList: true, subtree: true})
 
   run()
+
+  return () => {
+    observer.disconnect()
+    if (pending) clearTimeout(pending)
+  }
 }
