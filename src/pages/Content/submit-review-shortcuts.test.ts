@@ -8,7 +8,8 @@ import {
 const APPROVE = SHORTCUTS.find(shortcut => shortcut.key === 'approve')!
 const EYE = SHORTCUTS.find(shortcut => shortcut.key === 'eye')!
 
-const TOOLBAR = `
+// GitHub has served the toolbar with two shapes of CSS-module class names. Both must keep working.
+const LEGACY_TOOLBAR = `
   <section class="use-sticky-header-module__stickyHeader__sf0hv PullRequestFilesToolbar-module__toolbar__ztHN6">
     <div data-component="Stack">
       <div class="PullRequestFilesToolbar-module__file-controls-divider__zkpAr"></div>
@@ -18,6 +19,27 @@ const TOOLBAR = `
       </button>
     </div>
   </section>`
+
+const CURRENT_TOOLBAR = `
+  <section class="stickyHeader__OQ39Id toolbar__UgdeAp prc-Stack-Stack-UQ9k6">
+    <h2 class="sr-only">Pull request toolbar</h2>
+    <div data-component="Stack">
+      <div class="file-controls-divider__iGaBhT" data-testid="file-controls-divider"></div>
+      <button data-component="Button" type="button"
+        class="prc-Button-ButtonBase-9n-Xk ReviewMenuButton__9e8CKv" data-variant="primary">
+        <span data-component="text" class="prc-Button-Label-FWkx3">
+          <span class="submitTextFull__VMPyTh">Submit <!-- -->review</span><span class="submitTextShort__ip2yEj">Review</span>
+        </span>
+      </button>
+    </div>
+  </section>`
+
+const TOOLBAR = LEGACY_TOOLBAR
+
+const TOOLBAR_BUILDS = [
+  ['legacy -module__ class names', LEGACY_TOOLBAR],
+  ['current bare class names', CURRENT_TOOLBAR]
+]
 
 const DIALOG = `
   <div role="dialog" aria-labelledby="anchored-review-title" aria-modal="true">
@@ -36,7 +58,7 @@ const DIALOG = `
     </div>
   </div>`
 
-const menuButton = () => document.querySelector<HTMLButtonElement>('.ReviewMenuButton-module__ReviewMenuButton__eXO8O')!
+const menuButton = () => document.querySelector<HTMLButtonElement>('button[class*="ReviewMenuButton"]')!
 const dialog = () => document.querySelector<HTMLElement>('div[role="dialog"]')
 const editor = () => document.querySelector<HTMLTextAreaElement>('#review-body')!
 const radio = (value: string) => document.querySelector<HTMLInputElement>(`input[value="${value}"]`)!
@@ -79,15 +101,28 @@ describe('injectSubmitReviewShortcuts', () => {
     document.body.innerHTML = ''
   })
 
-  it('injects both shortcuts before the Submit review button', () => {
-    document.body.innerHTML = TOOLBAR
+  describe.each(TOOLBAR_BUILDS)('with %s', (_build, toolbar) => {
+    it('injects both shortcuts before the Submit review button', () => {
+      document.body.innerHTML = toolbar
 
-    injectSubmitReviewShortcuts()
+      injectSubmitReviewShortcuts()
 
-    expect(shortcut('approve')!.textContent).toBe('Approve')
-    expect(shortcut('eye')!.textContent).toBe('👁')
-    expect(menuButton().previousElementSibling).toBe(shortcut('eye'))
-    expect(shortcut('eye')!.previousElementSibling).toBe(shortcut('approve'))
+      expect(shortcut('approve')!.textContent).toBe('Approve')
+      expect(shortcut('eye')!.textContent).toBe('👁')
+      expect(menuButton().previousElementSibling).toBe(shortcut('eye'))
+      expect(shortcut('eye')!.previousElementSibling).toBe(shortcut('approve'))
+    })
+
+    it('serves every toolbar rendering the review menu', () => {
+      document.body.innerHTML = toolbar + toolbar
+
+      injectSubmitReviewShortcuts()
+
+      document.querySelectorAll<HTMLButtonElement>('button[class*="ReviewMenuButton"]').forEach(button => {
+        expect(button.previousElementSibling).toHaveProperty('dataset.ptShortcut', 'eye')
+      })
+      expect(document.querySelectorAll('.pt-review-shortcut')).toHaveLength(4)
+    })
   })
 
   it('does not duplicate the shortcuts on repeated runs', () => {
@@ -99,9 +134,12 @@ describe('injectSubmitReviewShortcuts', () => {
     expect(document.querySelectorAll('.pt-review-shortcut')).toHaveLength(2)
   })
 
-  it('falls back to the toolbar button label when the module class changes', () => {
+  it.each([
+    ['legacy', 'PullRequestFilesToolbar-module__toolbar__ztHN6'],
+    ['current', 'stickyHeader__OQ39Id toolbar__UgdeAp']
+  ])('falls back to the button label in a %s toolbar when the button class changes', (_build, toolbarClass) => {
     document.body.innerHTML = `
-      <section class="PullRequestFilesToolbar-module__toolbar__ztHN6">
+      <section class="${toolbarClass}">
         <div><button type="button" id="renamed"><span>Submit review</span></button></div>
       </section>`
 
@@ -118,18 +156,6 @@ describe('injectSubmitReviewShortcuts', () => {
     expect(shortcut('approve')).toBeNull()
   })
 
-  it('serves every toolbar rendering the review menu', () => {
-    document.body.innerHTML = TOOLBAR + TOOLBAR
-
-    injectSubmitReviewShortcuts()
-
-    document
-      .querySelectorAll<HTMLButtonElement>('.ReviewMenuButton-module__ReviewMenuButton__eXO8O')
-      .forEach(button => {
-        expect(button.previousElementSibling).toHaveProperty('dataset.ptShortcut', 'eye')
-      })
-    expect(document.querySelectorAll('.pt-review-shortcut')).toHaveLength(4)
-  })
 })
 
 describe('wireSubmitReviewShortcuts', () => {
@@ -189,8 +215,8 @@ describe('submitReview', () => {
     document.body.innerHTML = ''
   })
 
-  it('opens the dialog, picks Approve and submits', async () => {
-    document.body.innerHTML = TOOLBAR
+  it.each(TOOLBAR_BUILDS)('opens the dialog, picks Approve and submits with %s', async (_build, toolbar) => {
+    document.body.innerHTML = toolbar
     stubReviewDialog()
     const submitted = jest.fn()
 

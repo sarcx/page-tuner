@@ -40,15 +40,24 @@ export const SHORTCUTS: ReviewShortcut[] = [
   }
 ]
 
+// GitHub ships its CSS-module class names in two shapes: the older `<File>-module__<name>__<hash>`
+// and the newer bare `<name>__<hash>`. Matching both keeps the shortcuts alive whichever build a
+// page is served, including a rollback.
+function cssModuleSelector(tag: string, file: string, name: string): string {
+  return [`${tag}[class*="${file}-module__${name}__"]`, `${tag}[class^="${name}__"]`, `${tag}[class*=" ${name}__"]`].join(
+    ', '
+  )
+}
+
 // A stuck toolbar can render its own copy of the review menu, so every match gets shortcuts —
 // picking only the first leaves whichever toolbar the reader is actually looking at bare.
 function findReviewMenuButtons(): HTMLButtonElement[] {
   const byModuleClass = Array.from(
-    document.querySelectorAll<HTMLButtonElement>('button[class*="ReviewMenuButton-module__ReviewMenuButton"]')
+    document.querySelectorAll<HTMLButtonElement>(cssModuleSelector('button', 'ReviewMenuButton', 'ReviewMenuButton'))
   )
   if (byModuleClass.length) return byModuleClass
 
-  const toolbars = Array.from(document.querySelectorAll('section[class*="PullRequestFilesToolbar-module__toolbar"]'))
+  const toolbars = Array.from(document.querySelectorAll(cssModuleSelector('section', 'PullRequestFilesToolbar', 'toolbar')))
   return toolbars.flatMap(toolbar =>
     Array.from(toolbar.querySelectorAll<HTMLButtonElement>('button')).filter(btn =>
       btn.textContent?.includes('Submit review')
@@ -62,7 +71,7 @@ function findReviewDialog(): HTMLElement | null {
 
 function findDialogSubmitButton(dialog: HTMLElement): HTMLButtonElement | null {
   const byModuleClass = dialog.querySelector<HTMLButtonElement>(
-    'button[class*="ReviewMenuFooter-module__SubmitReviewButton"]'
+    cssModuleSelector('button', 'ReviewMenuFooter', 'SubmitReviewButton')
   )
   if (byModuleClass) return byModuleClass
 
