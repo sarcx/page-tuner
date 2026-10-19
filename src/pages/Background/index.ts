@@ -1,16 +1,15 @@
-console.log('This is the background page.')
-console.log('Put the background scripts here.')
-
 import {rules} from '../Content/rule-definitions'
 
 const STORAGE_KEY = 'pageTunerRules'
 
+type StoredRule = {enabled: boolean; specifics: Record<string, any>}
+
 async function initializeRules() {
   const {[STORAGE_KEY]: currentRules = {}} = await chrome.storage.local.get(STORAGE_KEY)
 
-  const currentRulesMap = new Map(Object.entries(currentRules))
+  const currentRulesMap = new Map<string, Partial<StoredRule>>(Object.entries(currentRules))
 
-  const newRulesMap = new Map(
+  const newRulesMap = new Map<string, StoredRule>(
     rules.map(rule => [
       rule.name,
       {
@@ -20,14 +19,13 @@ async function initializeRules() {
     ])
   )
 
-  const rulesToStore = {}
-  const rulesToRemove = []
+  const rulesToStore: Record<string, StoredRule> = {}
+  const rulesToRemove: string[] = []
 
   // Handle existing rules
   for (const [key, value] of currentRulesMap) {
-    if (newRulesMap.has(key)) {
-      const newRule = newRulesMap.get(key)
-
+    const newRule = newRulesMap.get(key)
+    if (newRule) {
       if (typeof value.enabled === 'boolean') {
         rulesToStore[key] = {
           ...newRule,

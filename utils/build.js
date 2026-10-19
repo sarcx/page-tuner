@@ -1,7 +1,5 @@
 // Do this as the first thing so that any code reading it knows the right env.
-process.env.BABEL_ENV = 'production';
 process.env.NODE_ENV = 'production';
-process.env.ASSET_PATH = '/';
 
 var webpack = require('webpack'),
   path = require('path'),
@@ -9,19 +7,19 @@ var webpack = require('webpack'),
   config = require('../webpack.config'),
   ZipPlugin = require('zip-webpack-plugin');
 
-delete config.chromeExtensionBoilerplate;
-
-config.mode = 'production';
-
 var packageInfo = JSON.parse(fs.readFileSync('package.json', 'utf-8'));
 
-config.plugins = (config.plugins || []).concat(
+config.plugins = config.plugins.concat(
   new ZipPlugin({
     filename: `${packageInfo.name}-${packageInfo.version}.zip`,
     path: path.join(__dirname, '../', 'zip'),
   })
 );
 
-webpack(config, function (err) {
+webpack(config, function (err, stats) {
   if (err) throw err;
+  if (stats.hasErrors()) {
+    console.error(stats.toString('errors-only'));
+    process.exit(1);
+  }
 });

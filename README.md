@@ -29,7 +29,7 @@ independently from the extension popup; every rule is off until you turn it on.
 ## Installing
 
 1. `npm install`
-2. `npm run build` (or `npm start` for a watching dev server)
+2. `npm run build` (or `npm start` to rebuild on every change)
 3. Open `chrome://extensions/`, enable **Developer mode**, click **Load unpacked**, select `build/`.
 
 After changing the code, rebuild and hit reload on the extension card. Content script changes also
@@ -46,7 +46,7 @@ A rule touches four places:
    on client-side navigation).
 4. **`src/pages/Popup/Popup.tsx`** — the toggle.
 
-The background service worker (`src/pages/Background/index.js`) owns the rule state in
+The background service worker (`src/pages/Background/index.ts`) owns the rule state in
 `chrome.storage.local`, reconciles it against `rule-definitions.ts` on install and update, and answers
 `GET_RULES` messages.
 
