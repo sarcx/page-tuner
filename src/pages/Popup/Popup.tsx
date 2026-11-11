@@ -25,7 +25,8 @@ const SECTIONS: {title: string; rules: RuleItem[]}[] = [
       {key: 'goToLineInEditorRule', label: 'Go to line in editor'},
       {key: 'copyFileNameRule', label: 'Copy file name from review threads'},
       {key: 'copyReviewLinksRule', label: 'Copy comment link & path in review threads'},
-      {key: 'submitReviewShortcutsRule', label: 'Approve & 👁 shortcuts next to Submit review'}
+      {key: 'submitReviewShortcutsRule', label: 'Approve & 👁 shortcuts next to Submit review'},
+      {key: 'highlightSelectionRule', label: 'Highlight selection'}
     ]
   },
   {

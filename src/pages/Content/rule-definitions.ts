@@ -19,5 +19,6 @@ export const rules = [
   {name: 'autoExpandLargeDiffRule', specifics: {autoGenerateFileNames}},
   {name: 'copyFileNameRule', specifics: {}},
   {name: 'copyReviewLinksRule', specifics: {}},
-  {name: 'submitReviewShortcutsRule', specifics: {}}
+  {name: 'submitReviewShortcutsRule', specifics: {}},
+  {name: 'highlightSelectionRule', specifics: {}}
 ]

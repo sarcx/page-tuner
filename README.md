@@ -19,6 +19,7 @@ independently from the extension popup; every rule is off until you turn it on.
 | Copy file name from review threads | Copy button next to the file name in a review thread. |
 | Copy comment link & path in review threads | Copies a comment's permalink, or the file path with its line number. |
 | Approve & 👁 shortcuts next to Submit review | One-click approve, and a 👁 button that submits a comment review with the body `👁`. |
+| Highlight selection | Selecting text highlights every other place the same text appears on the page. |
 
 ### Peakon
 

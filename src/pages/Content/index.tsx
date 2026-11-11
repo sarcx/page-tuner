@@ -2,6 +2,7 @@ import {getRuleDefinitions} from '../utils/messages'
 import {autoExpandLargeDiffs} from './auto-expand-large-diff'
 import {injectCopyFileNameButtons} from './copy-file-name'
 import {injectReviewLinks} from './copy-review-links'
+import {wireHighlightSelection} from './highlight-selection'
 import {wireMarkFileAsViewed} from './mark-file-as-viewed'
 import {clickOn, findAllEl, findEl, isClicked, markAsClicked, printLine, runOnDomChanges, sleep} from './modules'
 import {wirePeakonAnswerMemory} from './peakon-answer-memory'
@@ -269,6 +270,20 @@ if (location.href.match(/https:\/\/github.com/)) {
   initSubmitReviewShortcuts()
 }
 
+// Highlight every occurrence of the selected text
+async function initHighlightSelection() {
+  const rules = await getRuleDefinitions()
+  if (!rules.highlightSelectionRule?.enabled) return
+  if (!location.href.match(/https:\/\/github.com/)) return
+
+  printLine('Highlight selection automation is running...')
+
+  wireHighlightSelection()
+}
+
+if (location.href.match(/https:\/\/github.com/)) {
+  initHighlightSelection()
+}
+
 // TODO: Move reviewed  checkbox on the right in GitHub
 // TODO: Expand all files
-// TODO: Highlight selected word
