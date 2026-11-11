@@ -65,6 +65,10 @@ const radio = (value: string) => document.querySelector<HTMLInputElement>(`input
 const footerSubmit = () =>
   document.querySelector<HTMLButtonElement>('.ReviewMenuFooter-module__SubmitReviewButton__KIlAr')!
 const shortcut = (key: string) => document.querySelector<HTMLButtonElement>(`[data-pt-shortcut="${key}"]`)
+const shortcutsBefore = (button: Element) =>
+  Array.from(button.previousElementSibling?.querySelectorAll<HTMLElement>('[data-pt-shortcut]') ?? []).map(
+    el => el.dataset.ptShortcut
+  )
 
 // GitHub keeps Submit review disabled until the review would say something: a body, or an event
 // other than a plain comment.
@@ -109,8 +113,16 @@ describe('injectSubmitReviewShortcuts', () => {
 
       expect(shortcut('approve')!.textContent).toBe('Approve')
       expect(shortcut('eye')!.textContent).toBe('👁')
-      expect(menuButton().previousElementSibling).toBe(shortcut('eye'))
-      expect(shortcut('eye')!.previousElementSibling).toBe(shortcut('approve'))
+      expect(shortcutsBefore(menuButton())).toEqual(['approve', 'eye'])
+    })
+
+    // Whatever GitHub renders to the left (the Merge status button, for one) must not touch Approve.
+    it('spaces the shortcuts on both sides', () => {
+      document.body.innerHTML = toolbar
+
+      injectSubmitReviewShortcuts()
+
+      expect(menuButton().previousElementSibling).toHaveProperty('style.margin', '0px 8px')
     })
 
     it('serves every toolbar rendering the review menu', () => {
@@ -119,7 +131,7 @@ describe('injectSubmitReviewShortcuts', () => {
       injectSubmitReviewShortcuts()
 
       document.querySelectorAll<HTMLButtonElement>('button[class*="ReviewMenuButton"]').forEach(button => {
-        expect(button.previousElementSibling).toHaveProperty('dataset.ptShortcut', 'eye')
+        expect(shortcutsBefore(button)).toEqual(['approve', 'eye'])
       })
       expect(document.querySelectorAll('.pt-review-shortcut')).toHaveLength(4)
     })
@@ -145,7 +157,7 @@ describe('injectSubmitReviewShortcuts', () => {
 
     injectSubmitReviewShortcuts()
 
-    expect(document.querySelector('#renamed')!.previousElementSibling).toBe(shortcut('eye'))
+    expect(shortcutsBefore(document.querySelector('#renamed')!)).toEqual(['approve', 'eye'])
   })
 
   it('injects nothing outside a pull request files page', () => {

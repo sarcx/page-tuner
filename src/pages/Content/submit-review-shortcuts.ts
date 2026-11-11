@@ -16,7 +16,7 @@ export type ReviewShortcut = {
 }
 
 const BUTTON_STYLE =
-  'display:inline-flex;align-items:center;justify-content:center;height:28px;padding:0 10px;margin-right:8px;' +
+  'display:inline-flex;align-items:center;justify-content:center;height:28px;padding:0 10px;' +
   'font-size:12px;font-weight:500;line-height:1;border-radius:6px;cursor:pointer;'
 
 export const SHORTCUTS: ReviewShortcut[] = [
@@ -184,9 +184,13 @@ export function injectSubmitReviewShortcuts(): void {
     if (!container) continue
     if (container.querySelector(`.${INJECTED_CLASS}`)) continue
 
-    for (const shortcut of SHORTCUTS) {
-      menuButton.insertAdjacentElement('beforebegin', createShortcutButton(shortcut))
-    }
+    // One group with margins on both sides keeps the spacing whatever GitHub puts to the left;
+    // margins on the buttons alone left Approve flush against the Merge status button.
+    const group = document.createElement('span')
+    group.className = `${INJECTED_CLASS}-group`
+    group.style.cssText = 'display:inline-flex;align-items:center;gap:8px;margin:0 8px;'
+    group.append(...SHORTCUTS.map(createShortcutButton))
+    menuButton.insertAdjacentElement('beforebegin', group)
   }
 }
 
