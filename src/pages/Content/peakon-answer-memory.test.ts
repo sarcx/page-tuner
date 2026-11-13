@@ -12,6 +12,7 @@ import {
 
 const STORAGE_KEY = 'peakon_survey_answers'
 const QUESTION = 'How happy are you at work?'
+const VALUE_QUESTION = 'Does your day-to-day experience of working here feel aligned to this value?'
 
 function surveyMarkup(question: string = QUESTION, scores: string[] = ['6', '7', '8']): string {
   const buttons = scores
@@ -22,6 +23,23 @@ function surveyMarkup(question: string = QUESTION, scores: string[] = ['6', '7',
     <div data-test-id="question-container">
       <h2 id="question-item-title">${question}</h2>
       <div role="group">${buttons}</div>
+    </div>`
+}
+
+// Trimmed from a value question: every value shares the title, and only the line above it names
+// the value.
+function valueQuestionMarkup(value: string): string {
+  return `
+    <div data-test-id="question-container">
+      <div data-type="value">
+        <p>Organisational value: ${value}</p>
+        <h1 id="question-item-title">${VALUE_QUESTION}</h1>
+        <div><span><p>Voice your ideas; challenge the status quo.</p></span></div>
+        <div role="group">
+          <button type="button" aria-pressed="false" data-scale="6">6</button>
+          <button type="button" aria-pressed="false" data-scale="9">9</button>
+        </div>
+      </div>
     </div>`
 }
 
@@ -155,6 +173,12 @@ describe('currentQuestion', () => {
 
     expect(currentQuestion()).toBeNull()
   })
+
+  it('names the value a value question asks about', () => {
+    document.body.innerHTML = valueQuestionMarkup('Be Brave')
+
+    expect(currentQuestion()).toBe(`Organisational value: Be Brave — ${VALUE_QUESTION}`)
+  })
 })
 
 describe('highlightStoredAnswer', () => {
@@ -233,6 +257,30 @@ describe('wirePeakonAnswerMemory', () => {
     dispose = wirePeakonAnswerMemory()
 
     expect(scoreButton('7').style.outline).toBe('3px solid #4CAF50')
+  })
+
+  it('keeps a separate answer for each value', () => {
+    document.body.innerHTML = valueQuestionMarkup('Be Brave')
+    dispose = wirePeakonAnswerMemory()
+    scoreButton('6').click()
+
+    document.body.innerHTML = valueQuestionMarkup('Own It')
+    scoreButton('9').click()
+
+    expect(Object.values(readAnswers()).map(answer => [answer.question, answer.score])).toEqual([
+      [`Organisational value: Be Brave — ${VALUE_QUESTION}`, '6'],
+      [`Organisational value: Own It — ${VALUE_QUESTION}`, '9']
+    ])
+  })
+
+  it("does not outline another value's answer", () => {
+    document.body.innerHTML = valueQuestionMarkup('Own It')
+    saveAnswer(currentQuestion()!, '9')
+    document.body.innerHTML = valueQuestionMarkup('Be Brave')
+
+    dispose = wirePeakonAnswerMemory()
+
+    expect(document.querySelector('[data-pt-previous-answer]')).toBeNull()
   })
 
   it('mounts the panel and takes it away again on dispose', () => {

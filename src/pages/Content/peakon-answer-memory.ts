@@ -58,8 +58,17 @@ export function questionKey(question: string): string {
     .replace(/[.?!:;,]+$/, '')
 }
 
+// Value questions all share one title ("…feel aligned to this value?"); only the line above it, such
+// as "Organisational value: Be Brave", says which value is asked about. Without it every value
+// would share one stored answer and outline another value's score.
 export function currentQuestion(): string | null {
-  return document.querySelector(HOOKS.questionText.selector)?.textContent?.trim() || null
+  const title = document.querySelector(HOOKS.questionText.selector)
+  const text = title?.textContent?.trim()
+  if (!text) return null
+
+  const above = title?.previousElementSibling
+  const context = above?.matches('p') ? above.textContent?.trim() : null
+  return context ? `${context} — ${text}` : text
 }
 
 function answerButtons(): HTMLElement[] {
